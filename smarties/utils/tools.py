@@ -113,7 +113,6 @@ def get_row_mapmaking_matrix(
         else:
             return np.ones_like(polar_efficiency_coeff, dtype=int)
 
-    print(polar_efficiency_func(1).dtype)
     if polar_efficiency_coeff is None:
         polar_efficiency_coeff = np.ones(h_n_spin_dict[0].shape[0])
 

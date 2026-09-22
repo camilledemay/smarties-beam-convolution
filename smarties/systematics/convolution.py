@@ -196,9 +196,6 @@ def get_systematic_maps_from_alms_blms(
         alms_det = alms[det_name]
         blms_det = blms[det_name]
 
-
-        # print("Gaussian blms for detector", det_name, ":", gaussian_blms.values[1])
-
         alm0 = alms_det[0]
         almE = alms_det[1]
         almB = alms_det[2]
@@ -207,6 +204,9 @@ def get_systematic_maps_from_alms_blms(
         blmE = blms_det[1].copy()
         blmB = blms_det[2].copy()
         if substract_gaussian_beam:
+
+            print(f"Substracting gaussian beam for detector {det_name} with fwhm {fwhm[idet]} arcmin")
+
             gaussian_blms = gaussian_circular_beam_alms(
                 fwhm_rad=fwhm_rad[idet],
                 lmax=lmax,
@@ -267,7 +267,8 @@ def get_systematic_maps_from_alms_blms(
             output_alms = spin_0_term + 0.5 * (spin_plus_2_term + spin_minus_2_term)
 
             dict_harm_coeff[spin][idet] = output_alms
-    for spin in spins_needed_pos:
+
+    for spin in spins_needed_pos: # We computes the maps from the alms
         for idet in range(n_det):
             if spin == 0:
                 dict_spin_maps[spin][idet] = _alm2map_ducc0(
@@ -283,6 +284,6 @@ def get_systematic_maps_from_alms_blms(
                     np.array([alm_plus, alm_minus]), spin,nside, lmax=lmax
                 )
                 dict_spin_maps[spin][idet] = maps[0] + 1j * maps[1]
-                dict_spin_maps[-spin][idet] = maps[0] - 1j * maps[1]
+                dict_spin_maps[-spin][idet] = maps[0] - 1j * maps[1] # negative spin maps are the complex conjugate of the positive spin maps
 
     return dict_spin_maps
