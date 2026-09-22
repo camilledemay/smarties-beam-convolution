@@ -199,7 +199,6 @@ class FrameworkSystematics(object):
         """
 
         # Few assert
-        print([spin_sky_maps[spin].ndim for spin in spin_sky_maps.keys()])
         assert np.allclose([spin_sky_maps[spin].ndim for spin in spin_sky_maps.keys()], 1), 'The CMB maps must be 1D arrays of shape (n_pix)'
         assert np.allclose([h_n_spin_dict[spin].ndim for spin in h_n_spin_dict.keys() if spin != 0 ], 2), 'The h_n maps must be 2D arrays of shape (n_det, n_pix)'
         if spin_systematics_maps is not None:
