@@ -186,3 +186,54 @@ def alm2map_anypix(
             lmax=lmax,
             mmax=mmax,
         )
+
+def convert_alm_plusminus_to_spin(
+    alm_plus: np.ndarray, alm_minus: np.ndarray, spin: int = 2
+):
+    """Convert +/- basis alms coefficients to spin-weighted alms.
+
+    Parameters
+    ----------
+    alm_plus: np.ndarray
+        + basis coefficients.
+    alm_minus: np.ndarray
+        - basis coefficients (same shape as ``alm_plus``).
+    spin: int (optional)
+        Target spin (default 2).
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        ``(alm_pos_spin, alm_neg_spin)`` following Healpix convention
+    """
+    alms_pos_spin = -1 * (alm_plus + 1j * alm_minus)  # |spin| component
+    alms_neg_spin = (alm_plus - 1j * alm_minus) * (-1.0) ** (
+        -1 - spin
+    )  # -|spin| component
+
+    return alms_pos_spin, alms_neg_spin
+
+
+def convert_alm_spin_to_plusminus(
+    alm_pos_spin: np.ndarray, alm_neg_spin: np.ndarray, spin: int = 2
+):
+    """Convert spin-weighted alms coefficients to the +/- basis.
+
+    Parameters
+    ----------
+    alm_pos_spin: np.ndarray
+        +spin coefficients.
+    alm_neg_spin: np.ndarray
+        -spin coefficients (same shape as ``alm_pos_spin``).
+    spin: int (optional)
+        Spin of the input coefficients (default 2).
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        ``(alm_plus, alm_minus)`` following Healpix convention
+    """
+
+    alm_plus = -1 * (alm_pos_spin + (-1) ** (spin) * alm_neg_spin) / (2)
+    alm_minus = -1 * (alm_pos_spin - (-1) ** (spin) * alm_neg_spin) / (2j)
+    return alm_plus, alm_minus
