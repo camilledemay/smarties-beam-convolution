@@ -4,9 +4,14 @@
 
 import healpy as hp
 import numpy as np
+from pixell import enmap
 
-from smarties.utils.harmonics import _alm2map_ducc0, convert_alm_plusminus_to_spin, convert_alm_spin_to_plusminus
-
+from smarties.utils.harmonics import (
+    _alm2map_ducc0,
+    alm2map_anypix,
+    convert_alm_plusminus_to_spin,
+    convert_alm_spin_to_plusminus,
+)
 
 
 def gaussian_circular_beam_alms(
@@ -77,16 +82,17 @@ def gaussian_circular_beam_alms(
     return alms
 
 
-def get_systematic_maps_from_alms_blms(
+def get_beam_convolution_spins_maps(
     alms: dict[str, np.ndarray],
     blms: dict[str, np.ndarray],
     fwhm: np.ndarray,
     det_names: list,
     lmax: int,
     mmax_beam: int,
-    nside: int,
-    pol_angles_rad: np.ndarray,
+    shape_pixels_output: tuple,
+    pol_angles_rad: np.ndarray | None = None,
     spins: np.ndarray | None = None,
+    wcs=None,
     substract_gaussian_beam=True,
 ):
     """Compute systematic spin maps from sky and beam harmonic coefficents.
@@ -110,10 +116,10 @@ def get_systematic_maps_from_alms_blms(
         Maximum multipole.
     mmax_beam: int
         Maximum azimuthal index
-    nside: int
-        HEALPix ``nside`` for output maps.
-    pol_angles_rad: np.ndarray
-        Polarization angles in radians.
+    shape_pixels_output: tuple
+        Shape of the output maps.
+    pol_angles_rad: np.ndarray or None (optional)
+        Polarization angles in radians, only used if ``substract_gaussian_beam`` is True
     spins: np.ndarray or None (optional)
         Spins to compute. If ``None``, use ``-mmax..mmax``.
     substract_gaussian_beam: bool
@@ -133,7 +139,7 @@ def get_systematic_maps_from_alms_blms(
         "The spin wanted must be smaller than mmax"
     )
     dict_spin_maps = {
-        spin: np.zeros((n_det, hp.nside2npix(nside)), dtype=np.complex128)
+        spin: np.zeros((n_det,) + shape_pixels_output, dtype=np.complex128)
         for spin in spins_needed
     }
     dict_harm_coeff = {
@@ -153,14 +159,20 @@ def get_systematic_maps_from_alms_blms(
         blmE = blms_det[1].copy()
         blmB = blms_det[2].copy()
         if substract_gaussian_beam:
-
-            print(f"Substracting gaussian beam for detector {det_name} with fwhm {fwhm[idet]} arcmin")
+            print(
+                f"Substracting gaussian beam for detector {det_name} with fwhm {fwhm[idet]} arcmin"
+            )
+            assert pol_angles_rad is not None and len(pol_angles_rad) == n_det, (
+                "You must provide polarization angles for all detectors if you want to substract the gaussian beam"
+            )
 
             gaussian_blms = gaussian_circular_beam_alms(
                 fwhm_rad=fwhm_rad[idet],
                 lmax=lmax,
                 mmax=mmax_beam,
-                pol_angle_rad=pol_angles_rad[idet],
+                pol_angle_rad=pol_angles_rad[idet]
+                if pol_angles_rad is not None
+                else None,
             )
 
             for m in range(min(2 + 1, mmax_beam + 1)):
@@ -170,7 +182,6 @@ def get_systematic_maps_from_alms_blms(
                 blmB[idx] -= gaussian_blms[2, idx]
 
         for spin in spins_needed:
-
             m_beam = -spin  # Z_{spin} uses b*_{ell,-spin}
 
             ell_array = np.arange(
@@ -217,11 +228,20 @@ def get_systematic_maps_from_alms_blms(
 
             dict_harm_coeff[spin][idet] = output_alms
 
-    for spin in spins_needed_pos: # We computes the maps from the alms
+    for spin in spins_needed_pos:  # We computes the maps from the alms
         for idet in range(n_det):
+            map_output = (
+                enmap.empty((int(spin != 0) + 1,) + shape_pixels_output, wcs=wcs)
+                if wcs is not None
+                else None
+            )
             if spin == 0:
-                dict_spin_maps[spin][idet] = _alm2map_ducc0(
-                    dict_harm_coeff[spin][idet], spin, nside, lmax
+                dict_spin_maps[spin][idet] = alm2map_anypix(
+                    dict_harm_coeff[spin][idet],
+                    spin,
+                    shape_pixels_output,
+                    map_output,
+                    lmax=lmax,
                 )
             else:
                 alm_plus, alm_minus = convert_alm_spin_to_plusminus(
@@ -229,10 +249,16 @@ def get_systematic_maps_from_alms_blms(
                     dict_harm_coeff[-spin][idet],
                     spin,
                 )
-                maps =  _alm2map_ducc0(
-                    np.array([alm_plus, alm_minus]), spin,nside, lmax=lmax
+                maps = alm2map_anypix(
+                    np.array([alm_plus, alm_minus]),
+                    spin,
+                    shape_pixels_output,
+                    map_output,
+                    lmax=lmax,
                 )
                 dict_spin_maps[spin][idet] = maps[0] + 1j * maps[1]
-                dict_spin_maps[-spin][idet] = maps[0] - 1j * maps[1] # negative spin maps are the complex conjugate of the positive spin maps
+                dict_spin_maps[-spin][idet] = (
+                    maps[0] - 1j * maps[1]
+                )  # negative spin maps are the complex conjugate of the positive spin maps
 
     return dict_spin_maps
