@@ -84,15 +84,15 @@ def gaussian_circular_beam_alms(
 def get_beam_convolution_spins_maps(
     alms: dict[str, np.ndarray],
     blms: dict[str, np.ndarray],
-    fwhm: np.ndarray,
     det_names: list,
     lmax: int,
     mmax_beam: int,
     shape_pixels_output: tuple,
+    fwhm: np.ndarray | None = None,
     pol_angles_rad: np.ndarray | None = None,
     spins: np.ndarray | None = None,
     wcs=None,
-    substract_gaussian_beam=True,
+    substract_gaussian_beam=False,
 ):
     """Compute systematic spin maps from sky and beam harmonic coefficents.
 
@@ -145,7 +145,6 @@ def get_beam_convolution_spins_maps(
         spin: np.zeros((n_det, hp.Alm.getsize(lmax)), dtype=np.complex128)
         for spin in spins_needed
     }
-    fwhm_rad = np.radians(np.array(fwhm) / 60)
     for idet, det_name in enumerate(det_names):
         alms_det = alms[det_name]
         blms_det = blms[det_name]
@@ -164,9 +163,11 @@ def get_beam_convolution_spins_maps(
             assert pol_angles_rad is not None and len(pol_angles_rad) == n_det, (
                 "You must provide polarization angles for all detectors if you want to substract the gaussian beam"
             )
-
+            assert fwhm is not None and len(fwhm) == n_det, (
+                "You must provide fwhm for all detectors if you want to substract the gaussian beam"
+            )
             gaussian_blms = gaussian_circular_beam_alms(
-                fwhm_rad=fwhm_rad[idet],
+                fwhm_rad=np.radians(fwhm[idet] / 60),
                 lmax=lmax,
                 mmax=mmax_beam,
                 pol_angle_rad=pol_angles_rad[idet]
