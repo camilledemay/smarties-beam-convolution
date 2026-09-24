@@ -7,7 +7,6 @@ import numpy as np
 from pixell import enmap
 
 from smarties.utils.harmonics import (
-    _alm2map_ducc0,
     alm2map_anypix,
     convert_alm_plusminus_to_spin,
     convert_alm_spin_to_plusminus,
