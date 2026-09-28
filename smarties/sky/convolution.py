@@ -145,6 +145,10 @@ def get_beam_convolution_spins_maps(
         spin: np.zeros((n_det, hp.Alm.getsize(lmax)), dtype=np.complex128)
         for spin in spins_needed
     }
+
+    ell_array = np.arange(lmax + 1)
+    sqrt_factor = np.sqrt(4.0 * np.pi / (2 * ell_array + 1))
+
     for idet, det_name in enumerate(det_names):
         alms_det = alms[det_name]
         blms_det = blms[det_name]
@@ -152,11 +156,12 @@ def get_beam_convolution_spins_maps(
         alm0 = alms_det[0]
         almE = alms_det[1]
         almB = alms_det[2]
+        alm_p2, alm_m2 = convert_alm_plusminus_to_spin(almE, almB, 2)
 
-        blm0 = blms_det[0].copy()
-        blmE = blms_det[1].copy()
-        blmB = blms_det[2].copy()
         if substract_gaussian_beam:
+            blm0 = blms_det[0].copy()
+            blmE = blms_det[1].copy()
+            blmB = blms_det[2].copy()
             print(
                 f"Substracting gaussian beam for detector {det_name} with fwhm {fwhm[idet]} arcmin"
             )
@@ -180,30 +185,25 @@ def get_beam_convolution_spins_maps(
                 blm0[idx] -= gaussian_blms[0, idx]
                 blmE[idx] -= gaussian_blms[1, idx]
                 blmB[idx] -= gaussian_blms[2, idx]
+        else:
+            blm0, blmE, blmB = blms_det[0], blms_det[1], blms_det[2]
+        curr_blm0 = np.zeros(lmax + 1, dtype=np.complex128)
+        curr_blmE = np.zeros(lmax + 1, dtype=np.complex128)
+        curr_blmB = np.zeros(lmax + 1, dtype=np.complex128)
 
         for spin in spins_needed:
+            curr_blm0.fill(0)
+            curr_blmE.fill(0)
+            curr_blmB.fill(0)
+
             m_beam = -spin  # Z_{spin} uses b*_{ell,-spin}
 
-            ell_array = np.arange(
-                0, lmax + 1
-            )  # Only consider ell where |m_beam| <= ell
-
-            prefactor = (
-                np.sqrt(4.0 * np.pi / (2 * ell_array + 1)) * (-1.0) ** (-spin)
-                # * pol_factor
-            )
-
+            prefactor = sqrt_factor * (-1.0) ** (-spin)
             idx_beam = hp.Alm.getidx(
                 lmax, np.arange(abs(m_beam), lmax + 1), abs(m_beam)
             )  # Get indices for all ell where |m_beam| <= ell
 
-            valid_lm_couple = ell_array >= abs(m_beam)
-
-            curr_blm0 = np.zeros(
-                lmax + 1, dtype=np.complex128
-            )  # we keep 0 when ell > |spin|
-            curr_blmE = np.zeros(lmax + 1, dtype=np.complex128)
-            curr_blmB = np.zeros(lmax + 1, dtype=np.complex128)
+            valid_lm_couple = ell_array >= abs(m_beam)  # we keep 0 when ell > |spin|
 
             if m_beam < 0:
                 curr_blm0[valid_lm_couple] = (-1) ** (-m_beam) * np.conj(blm0[idx_beam])
@@ -213,8 +213,6 @@ def get_beam_convolution_spins_maps(
                 curr_blm0[valid_lm_couple] = blm0[idx_beam]
                 curr_blmE[valid_lm_couple] = blmE[idx_beam]
                 curr_blmB[valid_lm_couple] = blmB[idx_beam]
-
-            alm_p2, alm_m2 = convert_alm_plusminus_to_spin(almE, almB, 2)
 
             curr_blm_p2, curr_blm_m2 = convert_alm_plusminus_to_spin(
                 curr_blmE, curr_blmB, 2
