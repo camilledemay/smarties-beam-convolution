@@ -58,6 +58,8 @@ class FrameworkSystematics(object):
             return [0, 2, -2]
         elif self.nstokes == 2:
             return [2, -2]
+        elif self.nstokes == 1:
+            return [0]
         else:
             raise NotImplemented('The number of Stokes parameters must be 2 (polarization only) or 3 (intensity and polarization), other cases are not implemented yet')
 
