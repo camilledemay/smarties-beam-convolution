@@ -6,7 +6,7 @@ from copy import deepcopy
 import numpy as np
 from opt_einsum import contract
 from pixell import enmap
-
+import time
 from smarties.utils.tools import get_coupled_spin, get_row_mapmaking_matrix
 from smarties.sky.cmb import create_CMB_spin_maps
 from smarties.hn import Spin_maps, Spin_nm
@@ -274,12 +274,14 @@ class FrameworkSystematics(object):
                 spin_sky_maps[spin] = np.zeros(1) # If a spin is not provided in the sky maps, we assume that the sky maps for this spin are zero
 
         if inverse_mapmaking_matrix is None:
+            t_start_mapmaking_matrix = time.time()
             inverse_mapmaking_matrix = self.get_inverse_mapmaking_matrix(
                 h_n_spin_dict,
                 polar_angle_coeff=polar_angle_coeff,
                 polar_efficiency_coeff=polar_efficiency_coeff,
                 npix=npix,
             )
+            print(f"Inverse mapmaking matrix computed in {time.time() - t_start_mapmaking_matrix:.2f} seconds", flush=True)
         else:
             assert inverse_mapmaking_matrix.shape == (npix, self.nstokes, self.nstokes), 'The inverse mapmaking matrix must be of shape (npix, nstokes, nstokes), with npix being the number of pixels in the observed area of the provided mask'
 
