@@ -122,7 +122,7 @@ def get_beam_convolution_spins_maps(
     spins: np.ndarray or None (optional)
         Spins to compute. If ``None``, use ``-mmax..mmax``.
     substract_gaussian_beam: bool
-        Wether to substract a gaussian beam or not, default to True.
+        Wether to substract a gaussian beam or not, default to False.
     Returns
     -------
     dict[int, np.ndarray]
@@ -162,14 +162,15 @@ def get_beam_convolution_spins_maps(
             blm0 = blms_det[0].copy()
             blmE = blms_det[1].copy()
             blmB = blms_det[2].copy()
-            print(
-                f"Substracting gaussian beam for detector {det_name} with fwhm {fwhm[idet]} arcmin"
-            )
+
             assert pol_angles_rad is not None and len(pol_angles_rad) == n_det, (
                 "You must provide polarization angles for all detectors if you want to substract the gaussian beam"
             )
             assert fwhm is not None and len(fwhm) == n_det, (
                 "You must provide fwhm for all detectors if you want to substract the gaussian beam"
+            )
+            print(
+                f"Substracting gaussian beam for detector {det_name} with fwhm {fwhm[idet]} arcmin"
             )
             gaussian_blms = gaussian_circular_beam_alms(
                 fwhm_rad=np.radians(fwhm[idet] / 60),
