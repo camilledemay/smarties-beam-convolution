@@ -6,7 +6,6 @@
 import h5py
 import healpy as hp
 import numpy as np
-from matplotlib.pylab import polar
 from opt_einsum import contract
 from pixell import enmap
 
