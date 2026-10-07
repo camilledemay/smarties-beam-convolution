@@ -137,6 +137,9 @@ def get_beam_convolution_spins_maps(
     assert np.max(spins_needed_pos) <= mmax_beam, (
         "The spin wanted must be smaller than mmax"
     )
+    assert np.all(spins_needed_pos) >= 0, (
+        "Please provide only positive spins"
+    )
     dict_spin_maps = {
         spin: np.zeros((n_det,) + shape_pixels_output, dtype=np.complex128)
         for spin in spins_needed
