@@ -3,8 +3,6 @@
 # lease refer to the LICENSE file in the root of this repository.
 
 
-import h5py
-import healpy as hp
 import numpy as np
 from opt_einsum import contract
 from pixell import enmap
