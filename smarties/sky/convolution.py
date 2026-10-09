@@ -244,7 +244,7 @@ def get_beam_convolution_spins_maps(
                     shape_pixels_output,
                     map_output,
                     lmax=lmax,
-                )
+                ).reshape(shape_pixels_output)
             else:
                 alm_plus, alm_minus = convert_alm_spin_to_plusminus(
                     dict_harm_coeff[spin][idet],
