@@ -2,7 +2,7 @@
 # Copyright (c) 2024-2026 bers of the Simons Simons Observatory Collaboration.
 # lease refer to the LICENSE file in the root of this repository.
 
-from os import cpu_count
+from os import process_cpu_count
 import numpy as np
 import healpy as hp
 from pixell import enmap, curvedsky
@@ -35,7 +35,7 @@ def _ducc_dictionary(
 def _alm2map_ducc0(alms, spin, nside, lmax=None, mmax=None, nthreads=-1):
 
     if nthreads < 0:
-        nthreads = cpu_count()
+        nthreads = process_cpu_count()
 
     if alms.ndim > 1:
         alm_size = alms.shape[-1]
@@ -72,7 +72,7 @@ def _map2alm_ducc0(maps, spin, lmax=None, mmax=None, nthreads=-1):
         mmax = lmax
 
     if nthreads < 0:
-        nthreads = cpu_count()
+        nthreads = process_cpu_count()
 
     weight = 4*np.pi/(12 * nside**2)
     alm = ducc0.sht.adjoint_synthesis(
